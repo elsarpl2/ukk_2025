@@ -32,35 +32,54 @@ class _ProdukPageState extends State<ProdukPage> {
       setState(() {
         isLoading = false;
       });
-      _showError('Gagal memuat data pengguna.');
+      _showError('Gagal memuat data produk.');
     }
+  }
+
+  Future<bool> isProdukExist(String nama_produk) async {
+    final response = await supabase.from('produk').select().eq('nama_produk', nama_produk);
+    return response.isNotEmpty; 
   }
 
   Future<void> addProduk(String nama_produk, String harga, String stok) async {
-    try {
-      await supabase.from('produk').insert({
-        'nama_produk': nama_produk,
-        'harga': harga,
-        'stok': stok,
-      }).select();
-      fetchProduk();
-      _showSuccess('User berhasil ditambahkan');
-    } catch (e) {
-      _showError('Gagal menambahkan user.');
-    }
-  }
+  try {
+    // Cek apakah username sudah ada
+    final existingUser = await supabase
+        .from('produk')
+        .select('nama_produk')
+        .eq('nama_produk', nama_produk)
+        .maybeSingle();
 
-  Future<void> editProduk(int produk_id, String nama_produk, String harga, String stok) async {
+    if (existingUser != null) {
+      _showError('nama_produk sudah digunakan. Gunakan nama lain.');
+      return;
+    }
+
+    // Tambahkan produk jika username belum ada
+    await supabase.from('produk').insert({
+      'nama_produk': nama_produk,
+      'harga': harga,
+      'stok': stok
+    }).select();
+
+    fetchProduk();
+    _showSuccess('Produk berhasil ditambahkan');
+  } catch (e) {
+    _showError('Gagal menambahkan produk.');
+  }
+}
+
+   Future<void> editProduk(int produk_id, String nama_produk, String harga, String stok) async {
     try {
-      await supabase.from('peroduk').update({
+      await supabase.from('produk').update({
         'nama_produk': nama_produk,
         'harga': harga,
         'stok': stok,
-      }).eq('produk_id', produk_id).select();
+      }).eq('id', produk_id).select();
       fetchProduk();
-      _showSuccess('User berhasil diperbarui');
+      _showSuccess('Produk berhasil diperbarui');
     } catch (e) {
-      _showError('Gagal mengedit user.');
+      _showError('Gagal mengedit produk.');
     }
   }
 
@@ -68,9 +87,9 @@ class _ProdukPageState extends State<ProdukPage> {
     try {
       await supabase.from('produk').delete().eq('produk_id', id).select();
       fetchProduk();
-      _showSuccess('User berhasil dihapus');
+      _showSuccess('Produk berhasil dihapus');
     } catch (e) {
-      _showError('Gagal menghapus user.');
+      _showError('Gagal menghapus produk.');
     }
   }
 
@@ -91,8 +110,7 @@ class _ProdukPageState extends State<ProdukPage> {
     final _formKey = GlobalKey<FormState>();
     final TextEditingController nama_produkController = TextEditingController(text: nama_produk ?? '');
     final TextEditingController hargaController = TextEditingController(text: harga ?? '');
-    final TextEditingController stokController = TextEditingController(text: stok?? '' );
-    bool obscureText = true;
+    final TextEditingController stokController = TextEditingController(text: stok ?? '');
 
     showDialog(
       context: context,
@@ -105,30 +123,43 @@ class _ProdukPageState extends State<ProdukPage> {
             children: [
               TextFormField(
                 controller: nama_produkController,
-                decoration: const InputDecoration(labelText: 'nama_produk'),
-                validator: (value) => value!.isEmpty ? 'nama_produk tidak boleh kosong' : null,
+                decoration: const InputDecoration(labelText: 'Nama Produk'),
+                validator: (value) => value!.isEmpty ? 'Nama produk tidak boleh kosong' : null,
               ),
               TextFormField(
-                controller: hargaController,
-                obscureText: obscureText,
-                decoration: InputDecoration(
-                  labelText: 'harga',
-                  suffixIcon: IconButton(
-                    icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
-                      setState(() {
-                        obscureText = !obscureText;
-                      });
-                    },
-                  ),
-                ),
-                validator: (value) => value!.isEmpty ? 'harga tidak boleh kosong' : null,
-              ),
-              TextFormField(
-                controller: stokController,
-                decoration: const InputDecoration(labelText: 'stok'),
-                validator: (value) => value!.isEmpty ? 'stok tidak boleh kosong' : null,
-              ),
+                 controller: hargaController,
+                 decoration: const InputDecoration(labelText: 'Harga'),
+                 keyboardType: TextInputType.number,
+                 validator: (value) {
+                   if (value == null || value.isEmpty) {
+                     return 'Harga tidak boleh kosong';
+                   }
+                   if (double.tryParse(value) == null) {
+                     return 'Harga harus berupa angka';
+                   }
+                   if (double.parse(value) <= 0) {
+                     return 'Harga harus lebih besar dari 0';
+                 }
+                   return null;
+                 },
+               ),
+             TextFormField(
+                 controller: stokController,
+                 decoration: const InputDecoration(labelText: 'Stok'),
+                 keyboardType: TextInputType.number,
+                 validator: (value) {
+                   if (value == null || value.isEmpty) {
+                     return 'Stok tidak boleh kosong';
+                   }
+                   if (int.tryParse(value) == null) {
+                     return 'Stok harus berupa angka';
+                   }
+                   if (int.parse(value) <= 0) {
+                     return 'Stok harus lebih besar dari 0';
+                   }
+                   return null;
+                 },
+             )
             ],
           ),
         ),
@@ -173,6 +204,10 @@ class _ProdukPageState extends State<ProdukPage> {
                       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       child: ListTile(
                         title: Text(produk['nama_produk'] ?? 'Unknown'),
+                        subtitle: Text(
+                          'Harga: Rp${produk['harga']} | Stok: ${produk['stok']}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

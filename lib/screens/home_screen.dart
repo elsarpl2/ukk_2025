@@ -1,3 +1,4 @@
+import 'package:aplikasi/screens/pelanggan_screen.dart';
 import 'package:aplikasi/screens/produk_screen.dart';
 import 'package:flutter/material.dart';
 import 'user_screen.dart';
@@ -16,8 +17,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> _getPages() {
     return [
       const RegistrasiPage(), // Placeholder untuk halaman User
-      const ProdukPage(),
-      // const Center(child: Text("Pelanggan")), 
+      const ProdukPage(), 
+      // const PelangganPage()
     ];
   }
 
@@ -31,6 +32,10 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icon(Icons.shopping_cart),
         label: 'Produk',
       ),
+      // BottomNavigationBarItem(
+      //   icon: Icon(Icons.person),
+      //   label: 'Pelanggan',
+      // ),
     ];
   }
 

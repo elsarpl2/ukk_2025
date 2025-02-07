@@ -36,18 +36,32 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
     }
   }
 
-  Future<void> addUser(String username, String password) async {
-    try {
-      await supabase.from('user').insert({
-        'username': username,
-        'password': password,
-      }).select();
-      fetchUsers();
-      _showSuccess('User berhasil ditambahkan');
-    } catch (e) {
-      _showError('Gagal menambahkan user.');
+ Future<void> addUser(String username, String password) async {
+  try {
+    // Cek apakah username sudah ada
+    final existingUser = await supabase
+        .from('user')
+        .select('username')
+        .eq('username', username)
+        .maybeSingle();
+
+    if (existingUser != null) {
+      _showError('Username sudah digunakan. Gunakan username lain.');
+      return;
     }
+
+    // Tambahkan user jika username belum ada
+    await supabase.from('user').insert({
+      'username': username,
+      'password': password,
+    }).select();
+
+    fetchUsers();
+    _showSuccess('User berhasil ditambahkan');
+  } catch (e) {
+    _showError('Gagal menambahkan user.');
   }
+}
 
   Future<void> editUser(int id, String username, String password) async {
     try {
