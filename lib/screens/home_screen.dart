@@ -1,3 +1,4 @@
+import 'package:aplikasi/screens/produk_screen.dart';
 import 'package:flutter/material.dart';
 import 'user_screen.dart';
 
@@ -15,6 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> _getPages() {
     return [
       const RegistrasiPage(), // Placeholder untuk halaman User
+      const ProdukPage(),
       // const Center(child: Text("Pelanggan")), 
     ];
   }
