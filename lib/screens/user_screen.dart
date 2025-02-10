@@ -21,145 +21,118 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
 
   Future<void> fetchUsers() async {
     try {
-      final response = await supabase.from('user').select().order('id');
-      if (response is List) {
-        setState(() {
-          userList = List<Map<String, dynamic>>.from(response);
-          isLoading = false;
-        });
-      }
-    } catch (e) {
+      final response = await supabase.from('user').select('id, username, password').order('id');
       setState(() {
+        userList = List<Map<String, dynamic>>.from(response);
         isLoading = false;
       });
-      _showError('Gagal memuat data pengguna.');
+    } catch (e) {
+      setState(() => isLoading = false);
+      _showMessage('Gagal memuat data pengguna.', false);
     }
   }
 
- Future<void> addUser(String username, String password) async {
-  try {
-    // Cek apakah username sudah ada
-    final existingUser = await supabase
-        .from('user')
-        .select('username')
-        .eq('username', username)
-        .maybeSingle();
-
-    if (existingUser != null) {
-      _showError('Username sudah digunakan. Gunakan username lain.');
+  Future<void> addUser(String username, String password) async {
+    if (password.isEmpty) {
+      _showMessage('Password harus diisi.', false);
       return;
     }
+    try {
+      final existingUser = await supabase
+          .from('user')
+          .select('username')
+          .eq('username', username)
+          .maybeSingle();
 
-    // Tambahkan user jika username belum ada
-    await supabase.from('user').insert({
-      'username': username,
-      'password': password,
-    }).select();
+      if (existingUser != null) {
+        _showMessage('Username sudah digunakan.', false);
+        return;
+      }
 
-    fetchUsers();
-    _showSuccess('User berhasil ditambahkan');
-  } catch (e) {
-    _showError('Gagal menambahkan user.');
+      await supabase.from('user').insert({'username': username, 'password': password});
+      fetchUsers();
+      _showMessage('User berhasil ditambahkan', true);
+    } catch (e) {
+      _showMessage('Gagal menambahkan user.', false);
+    }
   }
-}
 
   Future<void> editUser(int id, String username, String password) async {
     try {
-      await supabase.from('user').update({
-        'username': username,
-        'password': password,
-      }).eq('id', id).select();
+      final data = {'username': username, 'password': password};
+      await supabase.from('user').update(data).eq('id', id);
       fetchUsers();
-      _showSuccess('User berhasil diperbarui');
+      _showMessage('User berhasil diperbarui', true);
     } catch (e) {
-      _showError('Gagal mengedit user.');
+      _showMessage('Gagal mengedit user.', false);
     }
   }
 
   Future<void> deleteUser(int id) async {
     try {
-      await supabase.from('user').delete().eq('id', id).select();
+      await supabase.from('user').delete().eq('id', id);
       fetchUsers();
-      _showSuccess('User berhasil dihapus');
+      _showMessage('User berhasil dihapus', true);
     } catch (e) {
-      _showError('Gagal menghapus user.');
+      _showMessage('Gagal menghapus user.', false);
     }
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _showSuccess(String message) {
+  void _showMessage(String message, bool success) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: success ? Colors.green : Colors.red),
     );
   }
 
   void _showFormDialog({int? id, String? username, String? password}) {
     final _formKey = GlobalKey<FormState>();
-    final TextEditingController usernameController = TextEditingController(text: username ?? '');
-    final TextEditingController passwordController = TextEditingController(text: password ?? '');
-    bool obscureText = true;
+    final usernameController = TextEditingController(text: username ?? '');
+    final passwordController = TextEditingController(text: password ?? '');
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(id == null ? 'Tambah User' : 'Edit User'),
-        content: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: usernameController,
-                decoration: const InputDecoration(labelText: 'Username'),
-                validator: (value) => value!.isEmpty ? 'Username tidak boleh kosong' : null,
-              ),
-              TextFormField(
-                controller: passwordController,
-                obscureText: obscureText,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  suffixIcon: IconButton(
-                    icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
-                      setState(() {
-                        obscureText = !obscureText;
-                      });
-                    },
-                  ),
+      builder: (_) {
+        return AlertDialog(
+          title: Text(id == null ? 'Tambah User' : 'Edit User'),
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: usernameController,
+                  decoration: const InputDecoration(labelText: 'Username'),
+                  validator: (value) => value!.isEmpty ? 'Username tidak boleh kosong' : null,
                 ),
-                validator: (value) => value!.isEmpty ? 'Password tidak boleh kosong' : null,
-              ),
-            ],
+                TextFormField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(labelText: 'Password'),
+                  validator: (value) => id == null && value!.isEmpty ? 'Password harus diisi' : null,
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                if (id == null) {
-                  addUser(usernameController.text, passwordController.text);
-                } else {
-                  editUser(id, usernameController.text, passwordController.text);
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  if (id == null) {
+                    addUser(usernameController.text, passwordController.text);
+                  } else {
+                    editUser(id, usernameController.text, passwordController.text);
+                  }
+                  Navigator.pop(context);
                 }
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -184,19 +157,15 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
                           children: [
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
-                                _showFormDialog(
-                                  id: user['id'],
-                                  username: user['username'],
-                                  password: user['password'],
-                                );
-                              },
+                              onPressed: () => _showFormDialog(
+                                id: user['id'],
+                                username: user['username'],
+                                password: user['password'],
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                deleteUser(user['id']);
-                              },
+                              onPressed: () => deleteUser(user['id']),
                             ),
                           ],
                         ),
