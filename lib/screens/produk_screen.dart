@@ -40,39 +40,25 @@ class _ProdukPageState extends State<ProdukPage> {
   }
 
   void searchProduk(String query) {
-  final searchQueryLower = query.toLowerCase();
-  final isNumeric = double.tryParse(query) != null; // Cek apakah query angka
+    final searchQueryLower = query.toLowerCase();
+    final isNumeric = double.tryParse(query) != null; // Cek apakah query angka
 
-  final results = produkList.where((produk) {
-    final namaProduk = produk['nama_produk']?.toLowerCase() ?? '';
-    final hargaProduk = produk['harga']?.toString() ?? '';
+    final results = produkList.where((produk) {
+      final namaProduk = produk['nama_produk']?.toLowerCase() ?? '';
+      final hargaProduk = produk['harga']?.toString() ?? '';
 
-    if (isNumeric) {
-      return hargaProduk.contains(query); // Cari berdasarkan harga
-    } else {
-      return namaProduk.contains(searchQueryLower); // Cari berdasarkan nama
-    }
-  }).toList();
+      if (isNumeric) {
+        return hargaProduk.contains(query); // Cari berdasarkan harga
+      } else {
+        return namaProduk.contains(searchQueryLower); // Cari berdasarkan nama
+      }
+    }).toList();
 
-  setState(() {
-    filteredProdukList = results;
-    searchQuery = query; // Tidak error karena searchQuery sudah dideklarasikan
-  });
-}
-
-
-  // void searchProduk(String query) {
-  //   final results = produkList.where((produk) {
-  //     final namaProduk = produk['nama_produk']?.toLowerCase() ?? '';
-  //     final searchQuery = query.toLowerCase();
-  //     return namaProduk.contains(searchQuery);
-  //   }).toList();
-
-  //   setState(() {
-  //     filteredProdukList = results;
-  //     searchQuery = query;
-  //   });
-  // }
+    setState(() {
+      filteredProdukList = results;
+      searchQuery = query; // Tidak error karena searchQuery sudah dideklarasikan
+    });
+  }
 
   Future<bool> isProdukExists(String namaProduk) async {
     final response = await supabase.from('produk').select().eq('nama_produk', namaProduk);
@@ -165,6 +151,7 @@ class _ProdukPageState extends State<ProdukPage> {
                 filled: true,
                 fillColor: Colors.white,
               ),
+              style: const TextStyle(fontSize: 16), // Mengubah ukuran font
             ),
           ),
         ),
@@ -180,10 +167,13 @@ class _ProdukPageState extends State<ProdukPage> {
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       child: ListTile(
-                        title: Text(produk['nama_produk'] ?? 'Unknown'),
+                        title: Text(
+                          produk['nama_produk'] ?? 'Unknown',
+                          style: const TextStyle(fontSize: 18), // Mengubah ukuran font
+                        ),
                         subtitle: Text(
                           'Harga: Rp${produk['harga']} | Stok: ${produk['stok']}',
-                          style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                          style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0), fontSize: 16), // Mengubah ukuran font
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -237,6 +227,7 @@ class _ProdukPageState extends State<ProdukPage> {
                 controller: namaProdukController,
                 decoration: const InputDecoration(labelText: 'Nama Produk'),
                 validator: (value) => value!.isEmpty ? 'Nama produk tidak boleh kosong' : null,
+                style: const TextStyle(fontSize: 16), // Mengubah ukuran font
               ),
               TextFormField(
                 controller: hargaController,
@@ -245,6 +236,7 @@ class _ProdukPageState extends State<ProdukPage> {
                 validator: (value) => value == null || value.isEmpty || int.tryParse(value) == null || int.parse(value) <= 0
                     ? 'Harga harus berupa angka'
                     : null,
+                style: const TextStyle(fontSize: 16), // Mengubah ukuran font
               ),
               TextFormField(
                 controller: stokController,
@@ -253,6 +245,7 @@ class _ProdukPageState extends State<ProdukPage> {
                 validator: (value) => value == null || value.isEmpty || int.tryParse(value) == null || int.parse(value) < 0
                     ? 'Stok harus berupa angka'
                     : null,
+                style: const TextStyle(fontSize: 16), // Mengubah ukuran font
               ),
             ],
           ),

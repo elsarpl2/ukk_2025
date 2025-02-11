@@ -22,37 +22,37 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 
   Future<void> _fetchTransactionHistory() async {
-  try {
-    final response = await _supabase
-        .from('penjualan')
-        .select('''
-          penjualan_id,
-          tanggal_penjualan,
-          total_harga,
-          pelanggan_id,
-          pelanggan (nama_pelanggan),
-          detail_penjualan (
-            detail_id,
-            produk_id,
-            jumlah_produk,
-            subtotal,
-            produk (nama_produk)
-          )
-        ''')
-        .order('tanggal_penjualan', ascending: false);
+    try {
+      final response = await _supabase
+          .from('penjualan')
+          .select('''
+            penjualan_id,
+            tanggal_penjualan,
+            total_harga,
+            pelanggan_id,
+            pelanggan (nama_pelanggan),
+            detail_penjualan (
+              detail_id,
+              produk_id,
+              jumlah_produk,
+              subtotal,
+              produk (nama_produk)
+            )
+          ''')
+          .order('tanggal_penjualan', ascending: false);
 
-    List<Map<String, dynamic>> transactions = List<Map<String, dynamic>>.from(response as List<dynamic>);
+      List<Map<String, dynamic>> transactions = List<Map<String, dynamic>>.from(response as List<dynamic>);
 
-    setState(() {
-      _transactionHistory = transactions;
-      _filteredTransactions = transactions;
-    });
+      setState(() {
+        _transactionHistory = transactions;
+        _filteredTransactions = transactions;
+      });
 
-    debugPrint('Total transaksi yang diambil: ${_transactionHistory.length}');
-  } catch (error) {
-    debugPrint('Error mengambil data: $error');
+      debugPrint('Total transaksi yang diambil: ${_transactionHistory.length}');
+    } catch (error) {
+      debugPrint('Error mengambil data: $error');
+    }
   }
-}
 
   void _filterTransactions(String query) {
     if (query.isEmpty) {
@@ -136,7 +136,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         child: ExpansionTile(
-                          title: Text('Transaksi #${_filteredTransactions.length - index}'),
+                          title: Text('Transaksi #${transaction['penjualan_id']}'), // Menampilkan ID transaksi
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -144,12 +144,14 @@ class _RiwayatPageState extends State<RiwayatPage> {
                               Text('Total: Rp $totalHarga'),
                             ],
                           ),
-                          children: detailPenjualan.map<Widget>((detail) {
-                            return ListTile(
-                              title: Text(detail['produk']?['nama_produk'] ?? 'Produk Tidak Diketahui'),
-                              subtitle: Text('Jumlah: ${detail['jumlah_produk']} | Subtotal: Rp ${detail['subtotal']}'),
-                            );
-                          }).toList(),
+                          children: detailPenjualan.isNotEmpty
+                              ? detailPenjualan.map<Widget>((detail) {
+                                  return ListTile(
+                                    title: Text(detail['produk']?['nama_produk'] ?? 'Produk Tidak Diketahui'),
+                                    subtitle: Text('Jumlah: ${detail['jumlah_produk']} | Subtotal: Rp ${detail['subtotal']}'),
+                                  );
+                                }).toList()
+                              : [const ListTile(title: Text('Tidak ada detail produk'))],
                         ),
                       );
                     },

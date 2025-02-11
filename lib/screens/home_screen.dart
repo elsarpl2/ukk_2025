@@ -20,10 +20,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // Fungsi untuk mendapatkan daftar halaman yang tersedia di aplikasi
   List<Widget> _getPages() {
     return [
+      const TransaksiPage(),
       const RegistrasiPage(), // Halaman user (registrasi)
       const ProdukPage(), // Halaman produk
       const PelangganPage(), // Halaman pelanggan
-      const TransaksiPage(),
       const RiwayatPage(),
     ];
   }
@@ -32,20 +32,20 @@ class _HomeScreenState extends State<HomeScreen> {
   List<BottomNavigationBarItem> _getBottomNavItems() {
     return const [
       BottomNavigationBarItem(
-        icon: Icon(Icons.person), // Ikon untuk halaman user
-        label: 'User',
+        icon: Icon(Icons.shopping_cart), // Ikon untuk halaman transaksi
+        label: 'Transaksi',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.shopping_cart), // Ikon untuk halaman produk
+        icon: Icon(Icons.person), // Ikon untuk halaman user
+        label: 'User ',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.inventory), // Ikon untuk halaman produk
         label: 'Produk',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.person), // Ikon untuk halaman pelanggan
+        icon: Icon(Icons.people), // Ikon untuk halaman pelanggan
         label: 'Pelanggan',
-      ),
-      BottomNavigationBarItem(
-        icon: Icon(Icons.shopping_cart), // Ikon untuk halaman transaksi
-        label: 'Transaksi',
       ),
       BottomNavigationBarItem(
         icon: Icon(Icons.history), // Ikon untuk halaman riwayat transaksi
@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Kasir-Skincare", // Judul aplikasi
+          "Glow-Care Skincare", // Judul aplikasi
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: const Color.fromARGB(255, 7, 79, 186), // Warna latar belakang AppBar
@@ -78,14 +78,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: PageView(
-        controller: _pageController, // Menggunakan PageController untuk navigasi halaman
-        onPageChanged: (index) { // Fungsi saat halaman digeser
-          setState(() {
-            _currentIndex = index; // Mengubah indeks halaman aktif
-          });
-        },
-        children: _getPages(), // Menampilkan halaman berdasarkan daftar yang telah dibuat
+      body: Expanded(
+        child: PageView(
+          controller: _pageController, // Menggunakan PageController untuk navigasi halaman
+          onPageChanged: (index) { // Fungsi saat halaman digeser
+            setState(() {
+              _currentIndex = index; // Mengubah indeks halaman aktif
+            });
+          },
+          children: _getPages(), // Menampilkan halaman berdasarkan daftar yang telah dibuat
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex, // Indeks halaman yang aktif di navigasi bawah

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'home_screen.dart'; // Mengimpor halaman utama setelah login
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -9,114 +9,138 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>(); // Kunci untuk validasi formulir
-  final TextEditingController nameController = TextEditingController(); // Controller untuk input username
-  final TextEditingController passwordController = TextEditingController(); // Controller untuk input password
-  bool _isPasswordVisible = false; // Status untuk menampilkan atau menyembunyikan password
-  bool _isLoading = false; // Status untuk menampilkan loading saat login berlangsung
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffEAEAEA), // Warna latar belakang layar
+      backgroundColor: const Color(0xffEAEAEA),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20), // Membuat border radius
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1), // Efek bayangan
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Form(
-                key: _formKey, // Menggunakan kunci formulir untuk validasi
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const Text(
-                      'Login',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Column(
+                  children: const [
+                    Icon(
+                      Icons.spa,
+                      size: 80,
+                      color: Color(0xff1F509A),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Glow-Care Skincare',
                       style: TextStyle(
-                        color: Color(0xff1F509A),
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        fontSize: 32,
+                        color: Color(0xff1F509A),
                       ),
-                    ),
-                    const SizedBox(height: 20), // Jarak antara elemen
-                    TextFormField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        labelText: 'Username',
-                        prefixIcon: const Icon(Icons.person),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Username tidak boleh kosong'; // Validasi input
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      controller: passwordController,
-                      obscureText: !_isPasswordVisible, // Menyembunyikan password
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible; // Mengubah status visibilitas password
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Password tidak boleh kosong'; // Validasi input password
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login, // Menjalankan fungsi login jika tidak sedang loading
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff1F509A),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white) // Menampilkan indikator loading saat proses login
-                          : const Text(
-                              'Login',
-                              style: TextStyle(fontSize: 16, color: Colors.white),
-                            ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Text(
+                          'Login',
+                          style: TextStyle(
+                            color: Color(0xff1F509A),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            labelText: 'Username',
+                            prefixIcon: const Icon(Icons.person),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Username tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 15),
+                        TextFormField(
+                          controller: passwordController,
+                          obscureText: !_isPasswordVisible,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Password tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xff1F509A),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  'Login',
+                                  style: TextStyle(fontSize: 16, color: Colors.white),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -124,19 +148,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Fungsi untuk validasi login dengan Supabase
   void _login() async {
-    if (_formKey.currentState!.validate()) { // Validasi form sebelum login
+    if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      final supabase = Supabase.instance.client; // Inisialisasi Supabase
+      final supabase = Supabase.instance.client;
       final String username = nameController.text;
       final String password = passwordController.text;
 
       try {
-        // Mengambil data user berdasarkan username
         final response = await supabase
             .from('user')
             .select('username, password')
@@ -153,11 +175,9 @@ class _LoginScreenState extends State<LoginScreen> {
           } else if (dbPassword != password) {
             _showErrorDialog("Username atau password salah!");
           } else {
-            // Menyimpan username ke SharedPreferences
             SharedPreferences prefs = await SharedPreferences.getInstance();
             await prefs.setString('username', username);
-
-            // Navigasi ke HomeScreen setelah login berhasil
+            
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -165,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
       } catch (e) {
-        _showErrorDialog("Terjadi kesalahan saat login."); // Menampilkan error jika terjadi kesalahan
+        _showErrorDialog("Terjadi kesalahan saat login.");
       }
 
       setState(() {
@@ -174,7 +194,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Fungsi untuk menampilkan pesan error dalam dialog
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -183,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), // Menutup dialog
+            onPressed: () => Navigator.pop(context),
             child: const Text("OK"),
           ),
         ],

@@ -32,47 +32,47 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
     }
   }
 
-  Future<void> addUser(String username, String password) async {
+  Future<void> addUser (String username, String password) async {
     if (password.isEmpty) {
       _showMessage('Password harus diisi.', false);
       return;
     }
     try {
-      final existingUser = await supabase
+      final existingUser  = await supabase
           .from('user')
           .select('username')
           .eq('username', username)
           .maybeSingle();
 
-      if (existingUser != null) {
+      if (existingUser  != null) {
         _showMessage('Username sudah digunakan.', false);
         return;
       }
 
       await supabase.from('user').insert({'username': username, 'password': password});
       fetchUsers();
-      _showMessage('User berhasil ditambahkan', true);
+      _showMessage('User  berhasil ditambahkan', true);
     } catch (e) {
       _showMessage('Gagal menambahkan user.', false);
     }
   }
 
-  Future<void> editUser(int id, String username, String password) async {
+  Future<void> editUser (int id, String username, String password) async {
     try {
       final data = {'username': username, 'password': password};
       await supabase.from('user').update(data).eq('id', id);
       fetchUsers();
-      _showMessage('User berhasil diperbarui', true);
+      _showMessage('User  berhasil diperbarui', true);
     } catch (e) {
       _showMessage('Gagal mengedit user.', false);
     }
   }
 
-  Future<void> deleteUser(int id) async {
+  Future<void> deleteUser (int id) async {
     try {
       await supabase.from('user').delete().eq('id', id);
       fetchUsers();
-      _showMessage('User berhasil dihapus', true);
+      _showMessage('User  berhasil dihapus', true);
     } catch (e) {
       _showMessage('Gagal menghapus user.', false);
     }
@@ -103,11 +103,13 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
                   controller: usernameController,
                   decoration: const InputDecoration(labelText: 'Username'),
                   validator: (value) => value!.isEmpty ? 'Username tidak boleh kosong' : null,
+                  style: const TextStyle(fontSize: 16), // Mengubah ukuran font
                 ),
                 TextFormField(
                   controller: passwordController,
                   decoration: const InputDecoration(labelText: 'Password'),
                   validator: (value) => id == null && value!.isEmpty ? 'Password harus diisi' : null,
+                  style: const TextStyle(fontSize: 16), // Mengubah ukuran font
                 ),
               ],
             ),
@@ -121,9 +123,9 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   if (id == null) {
-                    addUser(usernameController.text, passwordController.text);
+                    addUser (usernameController.text, passwordController.text);
                   } else {
-                    editUser(id, usernameController.text, passwordController.text);
+                    editUser (id, usernameController.text, passwordController.text);
                   }
                   Navigator.pop(context);
                 }
@@ -151,7 +153,10 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       child: ListTile(
-                        title: Text(user['username'] ?? 'Unknown'),
+                        title: Text(
+                          user['username'] ?? 'Unknown',
+                          style: const TextStyle(fontSize: 18), // Mengubah ukuran font
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -165,7 +170,7 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => deleteUser(user['id']),
+                              onPressed: () => deleteUser (user['id']),
                             ),
                           ],
                         ),

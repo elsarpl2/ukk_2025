@@ -11,7 +11,9 @@ class PelangganPage extends StatefulWidget {
 class _PelangganPageState extends State<PelangganPage> {
   final SupabaseClient supabase = Supabase.instance.client;
   List<Map<String, dynamic>> userList = [];
+  List<Map<String, dynamic>> filteredList = [];
   bool isLoading = true;
+  String searchQuery = '';
 
   @override
   void initState() {
@@ -25,6 +27,7 @@ class _PelangganPageState extends State<PelangganPage> {
       if (response is List) {
         setState(() {
           userList = List<Map<String, dynamic>>.from(response);
+          filteredList = userList; // Initialize filteredList with all users
           isLoading = false;
         });
       }
@@ -36,15 +39,26 @@ class _PelangganPageState extends State<PelangganPage> {
     }
   }
 
+  void _filterPelanggan(String query) {
+    setState(() {
+      searchQuery = query;
+      filteredList = userList.where((pelanggan) {
+        return (pelanggan['nama_pelanggan'] as String).toLowerCase().contains(query.toLowerCase()) ||
+               (pelanggan['alamat'] as String).toLowerCase().contains(query.toLowerCase()) ||
+               (pelanggan['no_telp'] as String).toLowerCase().contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
   Future<void> addPelanggan(String nama_pelanggan, String alamat, String no_telp) async {
     try {
-      final existingUser = await supabase
+      final existingUser    = await supabase
           .from('pelanggan')
           .select('nama_pelanggan')
           .eq('nama_pelanggan', nama_pelanggan)
           .maybeSingle();
 
-      if (existingUser != null) {
+      if (existingUser    != null) {
         _showError('Nama pelanggan sudah digunakan. Gunakan nama lain.');
         return;
       }
@@ -119,11 +133,13 @@ class _PelangganPageState extends State<PelangganPage> {
                 controller: nama_pelangganController,
                 decoration: const InputDecoration(labelText: 'Nama pelanggan'),
                 validator: (value) => value!.isEmpty ? 'Nama pelanggan tidak boleh kosong' : null,
+                style: TextStyle(fontSize: 16), // Mengubah ukuran font
               ),
               TextFormField(
                 controller: alamatController,
                 decoration: const InputDecoration(labelText: 'Alamat'),
                 validator: (value) => value!.isEmpty ? 'Alamat tidak boleh kosong' : null,
+                style: TextStyle(fontSize: 16), // Mengubah ukuran font
               ),
               TextFormField(
                 controller: no_telpController,
@@ -136,8 +152,12 @@ class _PelangganPageState extends State<PelangganPage> {
                   if (int.tryParse(value) == null) {
                     return 'No. Telp harus berupa angka';
                   }
+                  if (value.length > 13) {
+                    return 'No. Telp maksimal 13 angka';
+                  }
                   return null;
                 },
+                style: TextStyle(fontSize: 16), // Mengubah ukuran font
               )
             ],
           ),
@@ -171,52 +191,73 @@ class _PelangganPageState extends State<PelangganPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Data Pelanggan')),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : userList.isEmpty
-              ? const Center(child: Text('Tidak ada data pelanggan.'))
-              : ListView.builder(
-                  itemCount: userList.length,
-                  itemBuilder: (context, index) {
-                    final pelanggan = userList[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      child: ListTile(
-                        title: Text(pelanggan['nama_pelanggan'] ?? 'Unknown'),
-                        subtitle: Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(text: "Alamat: ${pelanggan['alamat'] ?? '-'}\n"),
-                              TextSpan(text: "No. Telp: ${pelanggan['no_telp'] ?? '-'}"),
-                            ],
-                          ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
-                                _showFormDialog(
-                                  pelanggan_id: pelanggan['pelanggan_id'],
-                                  nama_pelanggan: pelanggan['nama_pelanggan'],
-                                  alamat: pelanggan['alamat'],
-                                  no_telp: pelanggan['no_telp'],
-                                );
-                              },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              onChanged: _filterPelanggan,
+              decoration: InputDecoration(
+                labelText: 'Cari berdasarkan nama, alamat, no_telp',
+                border: OutlineInputBorder(),
+              ),
+              style: TextStyle(fontSize: 16), // Mengubah ukuran font
+            ),
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredList.isEmpty
+                    ? const Center(child: Text('Tidak ada data pelanggan.'))
+                    : ListView.builder(
+                        itemCount: filteredList.length,
+                        itemBuilder: (context, index) {
+                          final pelanggan = filteredList[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            child: ListTile(
+                              title: Text(
+                                pelanggan['nama_pelanggan'] ?? 'Unknown',
+                                style: TextStyle(fontSize: 18), // Mengubah ukuran font
+                              ),
+                              subtitle: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(text: "Alamat: ${pelanggan['alamat'] ?? '-'}\n"),
+                                    TextSpan(text: "No. Telp: ${pelanggan['no_telp'] ?? '-'}"),
+                                  ],
+                                ),
+                                style: TextStyle(fontSize: 16), // Mengubah ukuran font
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: () {
+                                      _showFormDialog(
+                                        pelanggan_id: pelanggan['pelanggan_id'],
+                                        nama_pelanggan: pelanggan['nama_pelanggan'],
+                                        alamat: pelanggan['alamat'],
+                                        no_telp: pelanggan['no_telp'],
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () {
+                                      deletePelanggan(pelanggan['pelanggan_id']);
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                deletePelanggan(pelanggan['pelanggan_id']);
-                              },
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormDialog(),
         child: const Icon(Icons.add),
