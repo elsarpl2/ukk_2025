@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:typed_data';
 import 'dart:html' as html;
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class TransaksiPage extends StatefulWidget {
@@ -15,33 +14,36 @@ class TransaksiPage extends StatefulWidget {
 class _TransaksiPageState extends State<TransaksiPage> {
   final SupabaseClient _supabase = Supabase.instance.client;
   final TextEditingController _searchController = TextEditingController();
+
   List<Map<String, dynamic>> _cart = [];
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _filteredProducts = [];
   List<Map<String, dynamic>> _customers = [];
-  String? _selectedCustomerId; // Menyimpan ID pelanggan
-  String? _selectedCustomerName; // Menyimpan nama pelanggan
-  double _totalPrice = 0;
+
+  String? _selectedCustomerId; // ID of the selected customer
+  String? _selectedCustomerName; // Name of the selected customer
+  double _totalPrice = 0; // Total price of the cart
 
   @override
   void initState() {
     super.initState();
-    _fetchProduk();
-    _fetchCustomer();
+    _fetchProducts();
+    _fetchCustomers();
   }
 
-  Future<void> _fetchProduk() async {
+  Future<void> _fetchProducts() async {
     final response = await _supabase.from('produk').select();
     setState(() {
       _products = List<Map<String, dynamic>>.from(response as List<dynamic>);
-      _filteredProducts = _products;
+      _filteredProducts = _products; // Initialize filtered products
     });
   }
 
-  Future<void> _fetchCustomer() async {
-    final response = await _supabase.from('pelanggan').select();
+  Future<void> _fetchCustomers() async {
+    final response = await _supabase.from('pelanggan').select('pelanggan_id, nama_pelanggan');
     setState(() {
       _customers = List<Map<String, dynamic>>.from(response as List<dynamic>);
+      print("Customers List: $_customers"); // Debugging
     });
   }
 
@@ -55,13 +57,13 @@ class _TransaksiPageState extends State<TransaksiPage> {
       if (existingProduct.isNotEmpty) {
         final index = _cart.indexWhere((item) => item['produk_id'] == product['produk_id']);
         if (_cart[index]['quantity'] < product['stok']) {
-          _cart[index]['quantity'] += 1;
+          _cart[index]['quantity'] += 1; // Increase quantity if stock allows
         }
       } else {
-        _cart.add({...product, 'quantity': 1});
+        _cart.add({...product, 'quantity': 1}); // Add new product to cart
       }
 
-      _calculateTotal();
+      _calculateTotal(); // Recalculate total price
     });
   }
 
@@ -70,12 +72,12 @@ class _TransaksiPageState extends State<TransaksiPage> {
       final index = _cart.indexWhere((item) => item['produk_id'] == product['produk_id']);
       if (index != -1) {
         if (quantity > 0) {
-          _cart[index]['quantity'] = quantity;
+          _cart[index]['quantity'] = quantity; // Update quantity
         } else {
-          _cart.removeAt(index);
+          _cart.removeAt(index); // Remove product if quantity is zero
         }
       }
-      _calculateTotal();
+      _calculateTotal(); // Recalculate total price
     });
   }
 
@@ -116,88 +118,54 @@ class _TransaksiPageState extends State<TransaksiPage> {
 
       setState(() {
         _cart.clear();
-        _selectedCustomerId = null;
-        _selectedCustomerName = null; // Reset nama pelanggan
-        _totalPrice = 0;
+        _selectedCustomerId = null; // Reset customer ID
+        _selectedCustomerName = null; // Reset customer name
+        _totalPrice = 0; // Reset total price
       });
 
-      _fetchProduk();
-      _showSuccessAlert(purchasedItems);
+      _fetchProducts(); // Refresh product list
+      _showSuccessAlert(purchasedItems); // Show success alert
 
     } catch (error) {
       debugPrint('Error during checkout: $error');
     }
   }
 
-  Future<void> _generatePDF(List<Map<String, dynamic>> purchasedItems) async {
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text("Struk Pembelian", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-              pw.Text("Nama Pelanggan: $_selectedCustomerName", style: pw.TextStyle(fontSize: 16)), // Menggunakan nama pelanggan
-              pw.SizedBox(height: 10),
-              pw.Table(
-                border: pw.TableBorder.all(),
-                children: [
-                  pw.TableRow(
-                    children: [
-                      pw.Text("Produk", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text("Harga", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text("Jumlah", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text("Subtotal", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                    ],
-                  ),
-                  ...purchasedItems.map(
-                    (item) => pw.TableRow(
-                      children: [
-                        pw.Text(item['nama_produk']),
-                        pw.Text("Rp ${item['harga']}"),
-                        pw.Text("${item['quantity']}"),
-                        pw.Text("Rp ${item['harga'] * item['quantity']}"),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              pw.Divider(),
-              pw.Text("Total Harga: Rp $_totalPrice", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-            ],
-          );
-        },
-      ),
-    );
-
-    // Simpan sebagai ByteData
-    final Uint8List pdfBytes = await pdf.save();
-
-    // Buat file di browser untuk diunduh
-    final blob = html.Blob([pdfBytes], 'application/pdf');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', 'struk_pembelian.pdf')
-      ..click();
-
-    html.Url.revokeObjectUrl(url);
-  }
-
-  
-
   void _showSuccessAlert(List<Map<String, dynamic>> purchasedItems) {
+    final DateTime now = DateTime.now();
+    final String formattedDateTime =
+        "${now.day}-${now.month}-${now.year} ${now.hour}:${now.minute}";
+
+    // Calculate total price for alert dialog
+    double totalPrice = purchasedItems.fold(0, (sum, item) => sum + (item['harga'] * item['quantity']));
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Transaksi Berhasil'),
           content: SingleChildScrollView(
-            child: ListBody(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Detail pembelian:'),
-                const SizedBox(height: 8),
-                ...purchasedItems.map((item) => Text('${item['nama_produk']} - ${item['quantity']}x')).toList(),
+                Text("Tanggal: $formattedDateTime",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text("Pelanggan: $_selectedCustomerName", // Display customer name
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text("Total: Rp ${totalPrice.toStringAsFixed(0)}"),
+                const SizedBox(height: 10),
+                const Text("Detail Produk:",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Divider(),
+                ...purchasedItems.map((item) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item['nama_produk'],
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text("Jumlah: ${item['quantity']} | Subtotal: Rp ${(item['harga'] * item['quantity']).toStringAsFixed(0)}"),
+                        const Divider(),
+                      ],
+                    )),
               ],
             ),
           ),
@@ -205,7 +173,7 @@ class _TransaksiPageState extends State<TransaksiPage> {
             IconButton(
               icon: const Icon(Icons.download),
               onPressed: () {
-                _generatePDF(purchasedItems); // Panggil fungsi untuk menghasilkan PDF
+                _generatePDF(purchasedItems, formattedDateTime, totalPrice);
                 Navigator.pop(context);
               },
             ),
@@ -217,6 +185,77 @@ class _TransaksiPageState extends State<TransaksiPage> {
         );
       },
     );
+  }
+
+  Future<void> _generatePDF(List<Map<String, dynamic>> purchasedItems, String formattedDateTime, double totalPrice) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Center(
+                child: pw.Text("TOKO SKINCARE",
+                    style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.Center(
+                child: pw.Text("Jl. Contoh No. 123, Kota", style: pw.TextStyle(fontSize: 12)),
+              ),
+              pw.Center(
+                child: pw.Text("--------------------------------------"),
+              ),
+              pw.Text("Tanggal: $formattedDateTime",
+                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              pw.Text("Pelanggan: $_selectedCustomerName", // Include customer name in PDF
+                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              pw.Text("--------------------------------------"),
+              ...purchasedItems.map(
+                (item) => pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(item['nama_produk'], style: pw.TextStyle(fontSize: 12)),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text("${item['quantity']} x Rp ${item['harga'].toStringAsFixed(0)}", style: pw.TextStyle(fontSize: 12)),
+                        pw.Text("Rp ${(item['harga'] * item['quantity']).toStringAsFixed(0)}", style: pw.TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                    pw.Text("--------------------------------------"),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text("TOTAL", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text("Rp ${totalPrice.toStringAsFixed(0)}", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.SizedBox(height: 10),
+              pw.Center(
+                child: pw.Text("Terima Kasih Telah Berbelanja!", style: pw.TextStyle(fontSize: 12)),
+              ),
+              pw.Center(
+                child: pw.Text("--------------------------------------"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    final Uint8List pdfBytes = await pdf.save();
+    final blob = html.Blob([pdfBytes], 'application/pdf');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', 'struk_pembelian.pdf')
+      ..click();
+
+    html.Url.revokeObjectUrl(url);
   }
 
   @override
@@ -238,17 +277,12 @@ class _TransaksiPageState extends State<TransaksiPage> {
                 );
               }).toList(),
               onChanged: (value) {
-    setState(() {
-      _selectedCustomerId = value;
-      var selectedCustomer = _customers.firstWhere(
-        (customer) => customer['pelanggan_id'].toString() == value,
-        orElse: () => {},
-      );
-
-      if (selectedCustomer.isNotEmpty) {
-        _selectedCustomerName = selectedCustomer['nama_pelanggan'];
-      }
-    });
+                setState(() {
+                  _selectedCustomerId = value;
+                  // Find the selected customer and set the name
+                  final selectedCustomer = _customers.firstWhere((customer) => customer['pelanggan_id'].toString() == value);
+                  _selectedCustomerName = selectedCustomer['nama_pelanggan'];
+                });
               },
             ),
             TextField(
@@ -306,7 +340,7 @@ class _TransaksiPageState extends State<TransaksiPage> {
                 },
               ),
             ),
-            Text('Total: Rp ${_totalPrice.toStringAsFixed(2)}'),
+            Text('Total: Rp ${_totalPrice.toStringAsFixed(0)}'),
             ElevatedButton(
               onPressed: _checkout,
               child: const Text('Bayar'),
